@@ -26,10 +26,12 @@ function getWeather(req, res) {
     .then(response => parseWeather(response.body))
     .then(parseForecast => cache[key].data = parseForecast)
     .then(response => res.json(cache[key].data))
-    .catch(err => res.status(500).render('error',{error: err}));
+    .catch((error) => {
+      console.error(error);
+      response.status(200).send('Error!')
+    });
   }
 
-  //return res.json();
 }
 
 function parseWeather(weatherData) {
