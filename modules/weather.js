@@ -1,27 +1,26 @@
 'use strict';
 
 let cache = require('./cache.js');
-
-module.exports = getWeather;
+const superagent = require('superagent'); //declared super agent 
 
 function getWeather(latitude, longitude) {
   const key = 'weather-' + latitude + longitude;
   const url = 'http://api.weatherbit.io/v2.0/forecast/daily';
-  const queryParams = {
-    key: WEATHER_API_KEY,
+  const queryParams = ({
+    key: process.env.WEATHER_API_KEY,
     lang: 'en',
-    lat: lat,
-    lon: lon,
+    lat: latitude,  //hardcoded coordinates for seattle
+    lon: longitude, //hardcoded coordinates for seattle 
     days: 5,
-  };
-
+  });
+  
   if (cache[key] && (Date.now() - cache[key].timestamp < 50000)) {
     console.log('Cache hit');
   } else {
     console.log('Cache miss');
     cache[key] = {};
     cache[key].timestamp = Date.now();
-    cache[key].data = superagent.get(url)
+    cache[key].data = superagent.get(url).query(queryParams) //fixed the way query params is passed 
     .then(response => parseWeather(response.body));
   }
   
@@ -41,7 +40,9 @@ function parseWeather(weatherData) {
 
 class Weather {
   constructor(day) {
-    this.forecast = day.weather.description;
-    this.time = day.datetime;
+    this.description = day.weather.description;
+    this.date = day.datetime;
   }
 }
+
+module.exports = getWeather;
