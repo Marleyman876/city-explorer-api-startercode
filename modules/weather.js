@@ -3,28 +3,33 @@
 let cache = require('./cache.js');
 const superagent = require('superagent'); //declared super agent 
 
-function getWeather(latitude, longitude) {
-  const key = 'weather-' + latitude + longitude;
+function getWeather(req, res) {
+   const key = 'weather-' + req.query.lat + req.query.lon;
   const url = 'http://api.weatherbit.io/v2.0/forecast/daily';
-  const queryParams = ({
+  const queryParams = {
     key: process.env.WEATHER_API_KEY,
     lang: 'en',
-    lat: latitude,  //hardcoded coordinates for seattle
-    lon: longitude, //hardcoded coordinates for seattle 
+    lat: req.query.lat,
+    lon: req.query.lon,
     days: 5,
-  });
-  
+  };
+    console.log(key, queryParams, url)
+
   if (cache[key] && (Date.now() - cache[key].timestamp < 50000)) {
     console.log('Cache hit');
+    res.json(cache[key].data)
   } else {
     console.log('Cache miss');
     cache[key] = {};
     cache[key].timestamp = Date.now();
-    cache[key].data = superagent.get(url).query(queryParams) //fixed the way query params is passed 
-    .then(response => parseWeather(response.body));
+    cache[key].data = superagent.get(url).query(queryParams)
+    .then(response => parseWeather(response.body))
+    .then(parseForecast => cache[key].data = parseForecast)
+    .then(response => res.json(cache[key].data))
+    .catch(err => res.status(500).render('error',{error: err}));
   }
-  
-  return cache[key].data;
+
+  //return res.json();
 }
 
 function parseWeather(weatherData) {
